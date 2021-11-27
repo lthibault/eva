@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/lthibault/eva"
@@ -9,11 +10,13 @@ import (
 func main() {
 	var vm eva.VM
 
-	err := vm.Exec(`
+	v, err := vm.Exec(`
 		42
 	`)
 
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Println(v.Number())
 }

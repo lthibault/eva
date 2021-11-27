@@ -1,5 +1,6 @@
 package eva
 
 const (
-	OP_HALT = 0x00
+	OP_HALT = iota
+	OP_CONST
 )
