@@ -16,7 +16,6 @@ The standard Eva VM, as designed by [Dmitry Soshnikov](https://github.com/dmitry
 
 - Object-Oriented Programming
 - Bytecode-emitting compiler
-- 
 
 Porting Eva to Go requires workarounds for some C++ features, such as tagged unions, leading to the development of additional features.  In addition, certain language features have been added for practice and exploration.
 
