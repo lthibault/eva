@@ -17,6 +17,9 @@ func TestValue_IsPointer(t *testing.T) {
 
 	assert.False(t, eva.NewInt32(42).IsPointer(),
 		"int32 should be a value type")
+
+	assert.False(t, eva.NewString("").IsPointer(),
+		"string should be a pointer type")
 }
 
 func BenchmarkValue_IsPointer(b *testing.B) {
@@ -53,5 +56,33 @@ func BenchmarkValue_Int32(b *testing.B) {
 		if eva.NewInt32(int32(i)).Int32() != int32(i) {
 			panic(fmt.Sprintf("expected %d, got %d", i, eva.NewInt32(int32(i)).Int32()))
 		}
+	}
+}
+
+func TestValue_String(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		message string
+		s       string
+	}{{
+		message: "empty string should be valid",
+	}, {
+		message: "non-empty string should be valid",
+		s:       "hello, eva!",
+	}} {
+		assert.Equal(t, tt.s, eva.NewString(tt.s).String(), tt.message)
+	}
+}
+
+func BenchmarkValue_String(b *testing.B) {
+	var (
+		s  = "hello, eva!"
+		es = eva.NewString(s)
+	)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = es.String()
 	}
 }
