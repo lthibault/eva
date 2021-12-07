@@ -21,11 +21,13 @@ func (vm *VM) Exec(program string) (Value, error) {
 
 	// 2. compile to bytecode
 
-	vm.constants.PushBack(NewInt32(42))
+	vm.constants.PushBack(NewInt32(10))
+	vm.constants.PushBack(NewInt32(3))
 
 	var code = []byte{
-		OP_CONST,
-		0, // const pool index
+		OP_CONST, 0, // const pool index
+		OP_CONST, 1,
+		OP_SUB,
 		OP_HALT,
 	}
 
@@ -50,6 +52,11 @@ func (vm *VM) Eval(r io.ByteReader) (Value, error) {
 				return Value{}, err
 			}
 			vm.push(c) // push the result of the 'const' operation to the stack
+
+		case OP_ADD, OP_SUB, OP_MUL, OP_DIV:
+			arg1 := vm.pop() // n.b.:  stack is FILO
+			arg0 := vm.pop()
+			vm.push(binaryOp(op).Eval(arg0, arg1))
 
 		default:
 			// NOTE:  when refactoring to array/index-based opcodes, a non-existant
@@ -81,6 +88,30 @@ func (vm *VM) pop() Value {
 func (vm *VM) getConst(r io.ByteReader) (Value, error) {
 	cidx, err := r.ReadByte()
 	return vm.constants[cidx], err
+}
+
+type binaryOp uint8
+
+func (op binaryOp) Eval(arg0, arg1 Value) Value {
+	// TODO(performance):  use array-indexing trick to speed this up.
+	//                     We chan right-shift (>>) the opcode by some fixed
+	//                     amount to turn it into an array index.
+	switch uint8(op) {
+	case OP_ADD:
+		return NewInt32(arg0.Int32() + arg1.Int32())
+
+	case OP_SUB:
+		return NewInt32(arg0.Int32() - arg1.Int32())
+
+	case OP_MUL:
+		return NewInt32(arg0.Int32() * arg1.Int32())
+
+	case OP_DIV:
+		return NewInt32(arg0.Int32() / arg1.Int32())
+
+	default:
+		panic(fmt.Sprintf("unrecognized binary operation '%0x'", op))
+	}
 }
 
 type vector []Value
