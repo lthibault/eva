@@ -96,6 +96,8 @@ func (op binaryOp) Eval(arg0, arg1 Value) Value {
 	// TODO(performance):  use array-indexing trick to speed this up.
 	//                     We chan right-shift (>>) the opcode by some fixed
 	//                     amount to turn it into an array index.
+
+	// TODO:  make this work with other types.
 	switch uint8(op) {
 	case OP_ADD:
 		return NewInt32(arg0.Int32() + arg1.Int32())
