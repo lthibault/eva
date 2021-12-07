@@ -3,21 +3,24 @@ package eva
 import "unsafe"
 
 const (
-	NUMBER = iota
+	Int32 = iota
 )
 
 type Type uint8
 
 type Value struct {
-	Type  Type
-	Value unsafe.Pointer // TODO:  tagged pointers?
+	Type Type
+	val  uint64
+	ptr  unsafe.Pointer
 }
 
-func NewNumber(i int) *Value {
-	return &Value{
-		Type:  NUMBER,
-		Value: unsafe.Pointer(&i),
+func NewInt32(i int32) Value {
+	return Value{
+		Type: Int32,
+		val:  uint64(i),
 	}
 }
 
-func (v Value) Number() int { return *(*int)(v.Value) }
+func (v Value) IsPointer() bool { return uintptr(v.ptr) != 0 }
+
+func (v Value) Int32() int32 { return int32(v.val) }

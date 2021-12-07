@@ -18,5 +18,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(v.Number())
+	fmt.Println(v.Int32())
 }

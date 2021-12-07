@@ -11,17 +11,17 @@ const stackLimit = 4096
 
 type VM struct {
 	constants vector
-	stack     [stackLimit]*Value
+	stack     [stackLimit]Value
 	sp        int // stack pointer
 }
 
 // Exec the program.
-func (vm *VM) Exec(program string) (*Value, error) {
+func (vm *VM) Exec(program string) (Value, error) {
 	// 1. parse the program
 
 	// 2. compile to bytecode
 
-	vm.constants.PushBack(NewNumber(42))
+	vm.constants.PushBack(NewInt32(42))
 
 	var code = []byte{
 		OP_CONST,
@@ -33,11 +33,11 @@ func (vm *VM) Exec(program string) (*Value, error) {
 	return vm.Eval(bytes.NewBuffer(code))
 }
 
-func (vm *VM) Eval(r io.ByteReader) (*Value, error) {
+func (vm *VM) Eval(r io.ByteReader) (Value, error) {
 	for {
 		op, err := r.ReadByte()
 		if err != nil {
-			return nil, err
+			return Value{}, err
 		}
 
 		switch op {
@@ -47,7 +47,7 @@ func (vm *VM) Eval(r io.ByteReader) (*Value, error) {
 		case OP_CONST:
 			c, err := vm.getConst(r)
 			if err != nil {
-				return nil, err
+				return Value{}, err
 			}
 			vm.push(c) // push the result of the 'const' operation to the stack
 
@@ -60,7 +60,7 @@ func (vm *VM) Eval(r io.ByteReader) (*Value, error) {
 }
 
 // push a value onto the stack
-func (vm *VM) push(v *Value) {
+func (vm *VM) push(v Value) {
 	if vm.sp == stackLimit-1 {
 		panic("stack overflow")
 	}
@@ -69,7 +69,7 @@ func (vm *VM) push(v *Value) {
 }
 
 // pop a value from the stack
-func (vm *VM) pop() *Value {
+func (vm *VM) pop() Value {
 	if vm.sp == 0 {
 		panic("pop from empty stack")
 	}
@@ -78,11 +78,11 @@ func (vm *VM) pop() *Value {
 	return vm.stack[vm.sp]
 }
 
-func (vm *VM) getConst(r io.ByteReader) (*Value, error) {
+func (vm *VM) getConst(r io.ByteReader) (Value, error) {
 	cidx, err := r.ReadByte()
 	return vm.constants[cidx], err
 }
 
-type vector []*Value
+type vector []Value
 
-func (vs *vector) PushBack(v *Value) { *vs = append(*vs, v) }
+func (vs *vector) PushBack(v Value) { *vs = append(*vs, v) }
