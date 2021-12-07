@@ -21,13 +21,10 @@ func (vm *VM) Exec(program string) (Value, error) {
 
 	// 2. compile to bytecode
 
-	vm.constants.PushBack(NewInt32(10))
-	vm.constants.PushBack(NewInt32(3))
+	vm.constants.PushBack(NewString("Hello, Eva!"))
 
 	var code = []byte{
 		OP_CONST, 0, // const pool index
-		OP_CONST, 1,
-		OP_SUB,
 		OP_HALT,
 	}
 
