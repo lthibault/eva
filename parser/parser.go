@@ -6,17 +6,17 @@ import (
 	"strconv"
 )
 
-func Parse(r io.RuneReader) (Literal, error) {
+func Parse(r io.RuneScanner) (Literal, error) {
 	return New(r).Parse()
 }
 
 type Parser struct {
-	r    io.RuneReader
+	r    io.RuneScanner
 	next Token
 	err  error
 }
 
-func New(r io.RuneReader) *Parser {
+func New(r io.RuneScanner) *Parser {
 	p := &Parser{r: r}
 	p.next, p.err = ReadToken(r)
 	return p
@@ -96,16 +96,24 @@ func (p *Parser) ParseString() (s StringLiteral, err error) {
 }
 
 func (p *Parser) consume(k Kind) (t Token, err error) {
-	if err = p.err; err != nil {
-		return
+	for {
+		if p.err == ErrSkip {
+			continue
+		}
+
+		if err = p.err; err != nil {
+			break
+		}
+
+		if t = p.next; t.Kind != k {
+			err = fmt.Errorf("unexpected token type '%s', expected '%s'", t.Kind, k)
+			break
+		}
+
+		p.next, p.err = ReadToken(p.r)
+		break
 	}
 
-	if t = p.next; t.Kind != k {
-		err = fmt.Errorf("unexpected token type '%s', expected '%s'", t.Kind, k)
-		return
-	}
-
-	p.next, p.err = ReadToken(p.r)
 	return
 }
 

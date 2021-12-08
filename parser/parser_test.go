@@ -1,6 +1,7 @@
 package parser_test
 
 import (
+	"io"
 	"strings"
 	"testing"
 
@@ -10,8 +11,18 @@ import (
 
 func TestParse(t *testing.T) {
 	t.Parallel()
+	t.Skip()
 
-	n, err := parser.New(strings.NewReader("42")).Parse()
+	const program = `
+		/**
+		 * Documentation comment:
+		 */
+		"Hello, Eva!"
+
+		42  // Number
+`
+
+	n, err := parser.New(strings.NewReader(program)).Parse()
 	assert.NoError(t, err)
 	assert.Equal(t, parser.Int, n.Kind())
 	assert.Equal(t, parser.IntLiteral{42}, n)
@@ -25,17 +36,21 @@ func TestParseLiteral(t *testing.T) {
 		kind parser.Kind
 		want parser.Literal
 	}{{
-		src:  "42",
+		src:  " 42 ",
 		kind: parser.Int,
 		want: parser.IntLiteral{42},
 	}, {
-		src:  `"test"`,
+		src:  ` "test" `,
 		kind: parser.String,
 		want: parser.StringLiteral{"test"},
 	}, {
-		src:  "'test'",
+		src:  " 'test' ",
 		kind: parser.String,
 		want: parser.StringLiteral{"test"},
+	}, {
+		src:  " '   test   ' ",
+		kind: parser.String,
+		want: parser.StringLiteral{"   test   "},
 	}} {
 		n, err := parser.New(strings.NewReader(tt.src)).ParseLiteral()
 		assert.NoError(t, err)
@@ -47,7 +62,7 @@ func TestParseLiteral(t *testing.T) {
 func TestParseInt(t *testing.T) {
 	t.Parallel()
 
-	n, err := parser.New(strings.NewReader("42")).ParseInt()
+	n, err := parser.New(strings.NewReader(" 42 ")).ParseInt()
 	assert.NoError(t, err)
 	assert.Equal(t, parser.Int, n.Kind())
 	assert.Equal(t, 42, n.Value, "value should be '42'")
@@ -60,7 +75,7 @@ func TestParseString(t *testing.T) {
 	t.Run("DoubleQuote", func(t *testing.T) {
 		t.Parallel()
 
-		n, err := parser.New(strings.NewReader(`"Hello, Eva!"`)).ParseString()
+		n, err := parser.New(strings.NewReader(` "Hello, Eva!" `)).ParseString()
 		assert.NoError(t, err)
 		assert.Equal(t, parser.String, n.Kind())
 		assert.Equal(t, "Hello, Eva!", n.Value, "value should be 'Hello, Eva'")
@@ -69,9 +84,32 @@ func TestParseString(t *testing.T) {
 	t.Run("SingleQuote", func(t *testing.T) {
 		t.Parallel()
 
-		n, err := parser.New(strings.NewReader("'Hello, Eva!'")).ParseString()
+		n, err := parser.New(strings.NewReader(" 'Hello, Eva!' ")).ParseString()
 		assert.NoError(t, err)
 		assert.Equal(t, parser.String, n.Kind())
 		assert.Equal(t, "Hello, Eva!", n.Value, "value should be 'Hello, Eva'")
+	})
+}
+
+func TestComment(t *testing.T) {
+	t.Parallel()
+	t.Helper()
+
+	t.Run("SingleLine", func(t *testing.T) {
+		t.Parallel()
+
+		n, err := parser.New(strings.NewReader(`// ignore this comment`)).Parse()
+		assert.Zero(t, n)
+		assert.ErrorIs(t, err, io.EOF)
+	})
+
+	t.Run("MultiLine", func(t *testing.T) {
+		t.Parallel()
+
+		n, err := parser.New(strings.NewReader(`/*
+			ignore this comment
+		*/`)).Parse()
+		assert.Zero(t, n)
+		assert.ErrorIs(t, err, io.EOF)
 	})
 }

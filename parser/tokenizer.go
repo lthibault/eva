@@ -28,8 +28,8 @@ func (k Kind) String() string {
 	}
 }
 
-func ReadToken(r io.RuneReader) (Token, error) {
-	init, _, err := r.ReadRune()
+func ReadToken(r io.RuneScanner) (Token, error) {
+	init, err := discardWhitespace(r)
 	if err != nil {
 		return Token{}, err
 	}
@@ -42,10 +42,42 @@ func ReadToken(r io.RuneReader) (Token, error) {
 		return readString(r, init)
 	}
 
-	return Token{}, fmt.Errorf("syntax error: '%c'", init)
+	// comment?
+	if init == '/' {
+		next, _, err := r.ReadRune()
+		if err != nil {
+			return Token{}, err
+		}
+
+		if next == '/' {
+			return Token{}, discardSingleLineComment(r)
+		}
+
+		if next == '*' {
+			return Token{}, discardMultilineComment(r)
+		}
+
+		if err = r.UnreadRune(); err != nil {
+			return Token{}, err
+		}
+	}
+
+	return Token{}, fmt.Errorf("syntax error: unexpected token '%c'", init)
 }
 
-func readInt(r io.RuneReader, init rune) (Token, error) {
+func discardWhitespace(r io.RuneScanner) (init rune, err error) {
+	for {
+		if init, _, err = r.ReadRune(); err != nil {
+			return
+		}
+
+		if !unicode.IsSpace(init) {
+			return
+		}
+	}
+}
+
+func readInt(r io.RuneScanner, init rune) (Token, error) {
 	var (
 		err error
 		b   strings.Builder
@@ -71,7 +103,7 @@ func readInt(r io.RuneReader, init rune) (Token, error) {
 	}, err
 }
 
-func readString(r io.RuneReader, quote rune) (Token, error) {
+func readString(r io.RuneScanner, quote rune) (Token, error) {
 	var (
 		err  error
 		b    strings.Builder
@@ -89,6 +121,33 @@ func readString(r io.RuneReader, quote rune) (Token, error) {
 		Kind:  String,
 		Value: b.String(),
 	}, err
+}
+
+func discardSingleLineComment(r io.RuneReader) error {
+	for {
+		char, _, err := r.ReadRune()
+		if err != nil {
+			return err
+		}
+
+		if char == '\n' {
+			return ErrSkip
+		}
+	}
+}
+
+func discardMultilineComment(r io.RuneReader) error {
+	var star bool
+	for {
+		char, _, err := r.ReadRune()
+		if err != nil {
+			return err
+		}
+
+		if star = char == '*'; star && char == '/' {
+			return ErrSkip
+		}
+	}
 }
 
 type Token struct {
