@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+
+	"github.com/lthibault/eva/parser"
 )
 
 const stackLimit = 4096
@@ -17,7 +19,7 @@ type VM struct {
 
 // Exec the program.
 func (vm *VM) Exec(r io.RuneScanner) (Value, error) {
-	_, err := Parse(r)
+	_, err := parser.Parse(r)
 	if err != nil {
 		return Value{}, fmt.Errorf("parse: %w", err)
 	}
