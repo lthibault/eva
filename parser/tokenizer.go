@@ -38,7 +38,7 @@ func ReadToken(r io.RuneReader) (Token, error) {
 		return readInt(r, init)
 	}
 
-	if init == '"' {
+	if init == '"' || init == '\'' {
 		return readString(r, init)
 	}
 
@@ -71,20 +71,16 @@ func readInt(r io.RuneReader, init rune) (Token, error) {
 	}, err
 }
 
-func readString(r io.RuneReader, init rune) (Token, error) {
+func readString(r io.RuneReader, quote rune) (Token, error) {
 	var (
-		err error
-		b   strings.Builder
+		err  error
+		b    strings.Builder
+		char rune
 	)
 
-	for b.WriteRune(init); err == nil; b.WriteRune(init) {
-		if init, _, err = r.ReadRune(); err != nil {
-			break
-		}
-
-		// closing quote?
-		if init == '"' {
-			b.WriteRune(init)
+	for b.WriteRune(quote); err == nil; b.WriteRune(char) {
+		if char, _, err = r.ReadRune(); err == nil && char == quote {
+			b.WriteRune(char)
 			break
 		}
 	}

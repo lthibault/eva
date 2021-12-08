@@ -32,6 +32,10 @@ func TestParseLiteral(t *testing.T) {
 		src:  `"test"`,
 		kind: parser.String,
 		want: parser.StringLiteral{"test"},
+	}, {
+		src:  "'test'",
+		kind: parser.String,
+		want: parser.StringLiteral{"test"},
 	}} {
 		n, err := parser.New(strings.NewReader(tt.src)).ParseLiteral()
 		assert.NoError(t, err)
@@ -51,9 +55,23 @@ func TestParseInt(t *testing.T) {
 
 func TestParseString(t *testing.T) {
 	t.Parallel()
+	t.Helper()
 
-	n, err := parser.New(strings.NewReader(`"Hello, Eva!"`)).ParseInt()
-	assert.NoError(t, err)
-	assert.Equal(t, parser.String, n.Kind())
-	assert.Equal(t, "Hello, Eva!", n.Value, "value should be '42'")
+	t.Run("DoubleQuote", func(t *testing.T) {
+		t.Parallel()
+
+		n, err := parser.New(strings.NewReader(`"Hello, Eva!"`)).ParseString()
+		assert.NoError(t, err)
+		assert.Equal(t, parser.String, n.Kind())
+		assert.Equal(t, "Hello, Eva!", n.Value, "value should be 'Hello, Eva'")
+	})
+
+	t.Run("SingleQuote", func(t *testing.T) {
+		t.Parallel()
+
+		n, err := parser.New(strings.NewReader("'Hello, Eva!'")).ParseString()
+		assert.NoError(t, err)
+		assert.Equal(t, parser.String, n.Kind())
+		assert.Equal(t, "Hello, Eva!", n.Value, "value should be 'Hello, Eva'")
+	})
 }
